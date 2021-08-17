@@ -445,6 +445,19 @@ export class TPCUtils {
                     this.pc.localSSRCs.delete(oldTrack.rtcId);
                 });
         } else if (newTrack && !oldTrack) {
+            if (newTrack.getVideoType() === VideoType.DESKTOP) {
+                const transceiver = this.pc.peerconnection
+                    .getTransceivers()
+                    .filter(t => t.receiver?.track?.kind === MediaType.VIDEO)[1];
+
+                transceiver.direction = MediaDirection.SENDRECV;
+
+                return transceiver.sender.replaceTrack(newTrack.getTrack())
+                    .then(() => {
+                        this.pc.localTracks.set(newTrack.rtcId, newTrack);
+                    });
+            }
+
             return this.addTrackUnmute(newTrack)
                 .then(() => {
                     const mediaType = newTrack.getType();

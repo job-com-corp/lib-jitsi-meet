@@ -482,6 +482,7 @@ export default class ChatRoom extends Listenable {
 
             if (userInfo) {
                 identity.user = {};
+                console.log("USER INFO", userInfo);
                 for (const tag of [ 'id', 'name', 'avatar', 'email' ]) {
                     const child
                         = userInfo.children.find(c => c.tagName === tag);

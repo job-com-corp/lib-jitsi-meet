@@ -318,4 +318,8 @@ export default class JitsiParticipant {
     setBotType(newBotType) {
         this._botType = newBotType;
     }
+
+    getIdentity() {
+        return this._identity;
+    }
 }

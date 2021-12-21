@@ -494,10 +494,10 @@ export default class ChatRoom extends Listenable {
         const extractIdentityInformation = node => {
             const identity = {};
             const userInfo = node.children.find(c => c.tagName === 'user');
-
+            console.log("User Info libJitsiMeet.js onPresence", userInfo);
             if (userInfo) {
                 identity.user = {};
-                for (const tag of [ 'id', 'name', 'avatar' ]) {
+                for (const tag of [ 'id', 'name', 'avatar', 'email' ]) {
                     const child
                         = userInfo.children.find(c => c.tagName === tag);
 

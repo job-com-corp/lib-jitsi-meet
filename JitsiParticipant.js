@@ -344,4 +344,8 @@ export default class JitsiParticipant {
     setConnectionJid(newJid) {
         this._connectionJid = newJid;
     }
+    
+    getIdentity() {
+        return this._identity;
+    }
 }

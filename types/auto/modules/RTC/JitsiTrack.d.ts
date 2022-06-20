@@ -18,7 +18,6 @@ export default class JitsiTrack extends EventEmitter {
     constructor(conference: any, stream: any, track: any, streamInactiveHandler: any, trackMediaType: any, videoType: any);
     addEventListener: (eventName: string | symbol, listener: (...args: any[]) => void) => JitsiTrack;
     removeEventListener: (eventName: string | symbol, listener: (...args: any[]) => void) => JitsiTrack;
-    off: (eventName: string | symbol, listener: (...args: any[]) => void) => JitsiTrack;
     /**
      * Array with the HTML elements that are displaying the streams.
      * @type {Array}
@@ -222,7 +221,7 @@ export default class JitsiTrack extends EventEmitter {
      * a local track if the audio level was measured outside of the
      * peerconnection (see /modules/statistics/LocalStatsCollector.js).
      */
-    setAudioLevel(audioLevel: number, tpc?: TraceablePeerConnection): void;
+    setAudioLevel(audioLevel: number, tpc?: any): void;
     /**
      * Returns the msid of the stream attached to the JitsiTrack object or null
      * if no stream is attached.

@@ -95,7 +95,7 @@ declare class JitsiConference {
      * Jingle session instance for the JVB connection.
      * @type {JingleSessionPC}
      */
-    jvbJingleSession: JingleSessionPC;
+    jvbJingleSession: any;
     lastDominantSpeaker: any;
     dtmfManager: any;
     somebodySupportsDTMF: boolean;
@@ -163,7 +163,7 @@ declare class JitsiConference {
      * A JingleSession for the direct peer to peer connection.
      * @type {JingleSessionPC}
      */
-    p2pJingleSession: JingleSessionPC;
+    p2pJingleSession: any;
     videoSIPGWHandler: VideoSIPGW;
     recordingManager: RecordingManager;
     /**
@@ -193,7 +193,7 @@ declare class JitsiConference {
      * @param options.connection {JitsiConnection} overrides this.connection
      */
     _init(options?: {
-        connection: JitsiConnection;
+        connection: any;
     }): void;
     codecSelection: CodecSelection;
     _statsCurrentId: any;
@@ -260,13 +260,13 @@ declare class JitsiConference {
      *
      * @returns {JingleSessionPC|undefined}
      */
-    getActiveMediaSession(): JingleSessionPC | undefined;
+    getActiveMediaSession(): any | undefined;
     /**
      * Returns an array containing all media sessions existing in this conference.
      *
      * @returns {Array<JingleSessionPC>}
      */
-    getMediaSessions(): Array<JingleSessionPC>;
+    getMediaSessions(): Array<any>;
     private _registerRtcListeners;
     private _sendBridgeVideoTypeMessage;
     /**
@@ -310,17 +310,17 @@ declare class JitsiConference {
      * Obtains local audio track.
      * @return {JitsiLocalTrack|null}
      */
-    getLocalAudioTrack(): JitsiLocalTrack | null;
+    getLocalAudioTrack(): any | null;
     /**
      * Obtains local video track.
      * @return {JitsiLocalTrack|null}
      */
-    getLocalVideoTrack(): JitsiLocalTrack | null;
+    getLocalVideoTrack(): any | null;
     /**
      * Returns all the local video tracks.
      * @returns {Array<JitsiLocalTrack>}
      */
-    getLocalVideoTracks(): Array<JitsiLocalTrack>;
+    getLocalVideoTracks(): Array<any>;
     /**
      * Obtains the performance statistics.
      * @returns {Object|null}
@@ -421,13 +421,13 @@ declare class JitsiConference {
      * @throws {Error} if the specified track is a video track and there is already
      * another video track in the conference.
      */
-    addTrack(track: JitsiLocalTrack): Promise<JitsiLocalTrack>;
+    addTrack(track: any): Promise<any>;
     /**
      * Fires TRACK_AUDIO_LEVEL_CHANGED change conference event (for local tracks).
      * @param {number} audioLevel the audio level
      * @param {TraceablePeerConnection} [tpc]
      */
-    _fireAudioLevelChangeEvent(audioLevel: number, tpc?: TraceablePeerConnection): void;
+    _fireAudioLevelChangeEvent(audioLevel: number, tpc?: any): void;
     /**
      * Fires TRACK_MUTE_CHANGED change conference event.
      * @param track the JitsiTrack object related to the event.
@@ -440,7 +440,7 @@ declare class JitsiConference {
      * added when the user unmutes for the first time.
      * @returns {Array<JitsiLocalTrack>} - list of local tracks that are unmuted.
      */
-    _getInitialLocalTracks(): Array<JitsiLocalTrack>;
+    _getInitialLocalTracks(): Array<any>;
     /**
      * Clear JitsiLocalTrack properties and listeners.
      * @param track the JitsiLocalTrack object.
@@ -452,7 +452,7 @@ declare class JitsiConference {
      * @param {JitsiLocalTrack} track
      * @returns {Promise}
      */
-    removeTrack(track: JitsiLocalTrack): Promise<any>;
+    removeTrack(track: any): Promise<any>;
     /**
      * Replaces oldTrack with newTrack and performs a single offer/answer
      *  cycle after both operations are done.  Either oldTrack or newTrack
@@ -462,13 +462,13 @@ declare class JitsiConference {
      * @param {JitsiLocalTrack} newTrack the new stream to use
      * @returns {Promise} resolves when the replacement is finished
      */
-    replaceTrack(oldTrack: JitsiLocalTrack, newTrack: JitsiLocalTrack): Promise<any>;
+    replaceTrack(oldTrack: any, newTrack: any): Promise<any>;
     private _doReplaceTrack;
     /**
      * Operations related to creating a new track
      * @param {JitsiLocalTrack} newTrack the new track being created
      */
-    _setupNewTrack(newTrack: JitsiLocalTrack): void;
+    _setupNewTrack(newTrack: any): void;
     private _setNewVideoType;
     private _setTrackMuteStatus;
     /**
@@ -480,7 +480,7 @@ declare class JitsiConference {
      * @return {Promise} resolved when the process is done or rejected with a string
      * which describes the error.
      */
-    _addLocalTrackAsUnmute(track: JitsiLocalTrack): Promise<any>;
+    _addLocalTrackAsUnmute(track: any): Promise<any>;
     /**
      * Method called by the {@link JitsiLocalTrack} (a video one) in order to remove
      * the underlying WebRTC MediaStream from the PeerConnection. The purpose of
@@ -488,7 +488,7 @@ declare class JitsiConference {
      * @param {JitsiLocalTrack} track the local track that will be removed.
      * @return {Promise}
      */
-    _removeLocalTrackAsMute(track: JitsiLocalTrack): Promise<any>;
+    _removeLocalTrackAsMute(track: any): Promise<any>;
     /**
      * Get role of the local user.
      * @returns {string} user role: 'moderator' or 'none'
@@ -651,14 +651,14 @@ declare class JitsiConference {
      *
      * @param {JitsiRemoteTrack} track the JitsiRemoteTrack which was added to this JitsiConference.
      */
-    onRemoteTrackAdded(track: JitsiRemoteTrack): void;
+    onRemoteTrackAdded(track: any): void;
     /**
      * Callback called by the Jingle plugin when 'session-answer' is received.
      * @param {JingleSessionPC} session the Jingle session for which an answer was
      * received.
      * @param {jQuery} answer a jQuery selector pointing to 'jingle' IQ element
      */
-    onCallAccepted(session: JingleSessionPC, answer: jQuery): void;
+    onCallAccepted(session: any, answer: any): void;
     /**
      * Callback called by the Jingle plugin when 'transport-info' is received.
      * @param {JingleSessionPC} session the Jingle session for which the IQ was
@@ -666,14 +666,14 @@ declare class JitsiConference {
      * @param {jQuery} transportInfo a jQuery selector pointing to 'jingle' IQ
      * element
      */
-    onTransportInfo(session: JingleSessionPC, transportInfo: jQuery): void;
+    onTransportInfo(session: any, transportInfo: any): void;
     /**
      * Notifies this JitsiConference that a JitsiRemoteTrack was removed from
      * the conference.
      *
      * @param {JitsiRemoteTrack} removedTrack
      */
-    onRemoteTrackRemoved(removedTrack: JitsiRemoteTrack): void;
+    onRemoteTrackRemoved(removedTrack: any): void;
     /**
      * Handles an incoming call event for the P2P jingle session.
      */
@@ -695,7 +695,7 @@ declare class JitsiConference {
      * @param {TraceablePeerConnection} pc the peer connection which will be used
      * to listen for new WebRTC Data Channels (in the 'datachannel' mode).
      */
-    _setBridgeChannel(offerIq: jQuery, pc: TraceablePeerConnection): void;
+    _setBridgeChannel(offerIq: any, pc: any): void;
     private _rejectIncomingCall;
     /**
      * Handles the call ended event.
@@ -707,12 +707,12 @@ declare class JitsiConference {
      * @param {String|null} reasonText human readable reason text which may provide
      * more details about why the call has been terminated.
      */
-    onCallEnded(jingleSession: JingleSessionPC, reasonCondition: string, reasonText: string | null): void;
+    onCallEnded(jingleSession: any, reasonCondition: string, reasonText: string | null): void;
     /**
      * Handles the suspend detected event. Leaves the room and fires suspended.
      * @param {JingleSessionPC} jingleSession
      */
-    onSuspendDetected(jingleSession: JingleSessionPC): void;
+    onSuspendDetected(jingleSession: any): void;
     updateDTMFSupport(): void;
     /**
      * Allows to check if there is at least one user in the conference
@@ -785,7 +785,7 @@ declare class JitsiConference {
      * <tt>TraceablePeerConnection</tt> currently available.
      * @public (FIXME how to make package local ?)
      */
-    public getActivePeerConnection(): TraceablePeerConnection | null;
+    public getActivePeerConnection(): any | null;
     /**
      * Returns the connection state for the current room. Its ice connection state
      * for its session.
@@ -864,7 +864,7 @@ declare class JitsiConference {
      * @param {JitsiLocalTrack|JitsiRemoteTrack} track the track
      * @param container the container
      */
-    _onTrackAttach(track: JitsiLocalTrack | JitsiRemoteTrack, container: any): void;
+    _onTrackAttach(track: any | any, container: any): void;
     /**
      * Logs an "application log" message.
      * @param message {string} The message to log. Note that while this can be a
@@ -1038,7 +1038,7 @@ declare class JitsiConference {
      * @returns {JitsiVideoSIPGWSession|Error} Returns null if conference is not
      * initialised and there is no room.
      */
-    createVideoSIPGWSession(sipAddress: string, displayName: string): JitsiVideoSIPGWSession | Error;
+    createVideoSIPGWSession(sipAddress: string, displayName: string): any | Error;
     private _sendConferenceLeftAnalyticsEvent;
     /**
      * Restarts all active media sessions.

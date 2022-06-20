@@ -1,4 +1,4 @@
-declare const _default: FeatureFlags;
+declare var _default: FeatureFlags;
 export default _default;
 /**
  * A global module for accessing information about different feature flags state.

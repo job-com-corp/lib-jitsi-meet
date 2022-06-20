@@ -21,15 +21,15 @@ export default class JitsiRemoteTrack extends JitsiTrack {
      * @throws {TypeError} if <tt>ssrc</tt> is not a number.
      * @constructor
      */
-    constructor(rtc: RTC, conference: JitsiConference, ownerEndpointId: string, stream: MediaStream, track: MediaStreamTrack, mediaType: MediaType, videoType: VideoType, ssrc: number, muted: boolean, isP2P: boolean, sourceName: string);
-    rtc: RTC;
+    constructor(rtc: any, conference: any, ownerEndpointId: string, stream: MediaStream, track: MediaStreamTrack, mediaType: any, videoType: any, ssrc: number, muted: boolean, isP2P: boolean, sourceName: string);
+    rtc: any;
     ssrc: number;
     ownerEndpointId: string;
     muted: boolean;
     isP2P: boolean;
     _sourceName: string;
     _trackStreamingStatus: any;
-    _trackStreamingStatusImpl: any;
+    _trackStreamingStatusImpl: TrackStreamingStatusImpl;
     /**
      * This holds the timestamp indicating when remote video track entered forwarded sources set. Track entering
      * forwardedSources will have streaming status restoring and when we start receiving video will become active,
@@ -37,10 +37,6 @@ export default class JitsiRemoteTrack extends JitsiTrack {
      * will become interrupted.
      */
     _enteredForwardedSourcesTimestamp: number;
-    addEventListener: any;
-    on: any;
-    removeEventListener: any;
-    off: any;
     hasBeenMuted: boolean;
     _containerHandlers: {};
     /**
@@ -90,7 +86,7 @@ export default class JitsiRemoteTrack extends JitsiTrack {
      * @returns {boolean|*|JitsiRemoteTrack.muted} <tt>true</tt> if the track is
      * muted and <tt>false</tt> otherwise.
      */
-    isMuted(): boolean | any | JitsiRemoteTrack.muted;
+    isMuted(): boolean | any | any;
     /**
      * Returns the participant id which owns the track.
      *
@@ -121,14 +117,6 @@ export default class JitsiRemoteTrack extends JitsiTrack {
      * Handles track play events.
      */
     _playCallback(): void;
-    /**
-     * Attach time to first media tracker only if there is conference and only
-     * for the first element.
-     * @param container the HTML container which can be 'video' or 'audio'
-     * element.
-     * @private
-     */
-    private _attachTTFMTracker;
     /**
      * An event handler for events triggered by the attached container.
      *
@@ -182,3 +170,4 @@ export default class JitsiRemoteTrack extends JitsiTrack {
     _getEnteredForwardedSourcesTimestamp(): number;
 }
 import JitsiTrack from "./JitsiTrack";
+import TrackStreamingStatusImpl from "../connectivity/TrackStreamingStatus";

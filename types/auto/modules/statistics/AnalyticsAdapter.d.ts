@@ -1,4 +1,4 @@
-declare const _default: AnalyticsAdapter;
+declare var _default: AnalyticsAdapter;
 export default _default;
 /**
  * This class provides an API to lib-jitsi-meet and its users for sending

@@ -305,7 +305,7 @@ export default class RTC extends Listenable {
      * @param {SourceName} sourceName - the track's source name.
      * @param {BridgeVideoType} videoType - the track's video type.
      */
-    sendSourceVideoType(sourceName: any, videoType: {
+    sendSourceVideoType(sourceName: SourceName, videoType: {
         CAMERA: string;
         DESKTOP: string;
         DESKTOP_HIGH_FPS: string;
@@ -337,7 +337,7 @@ export default class RTC extends Listenable {
      * @param {boolean} options.startSilent If set to 'true' no audio will be sent or received.
      * @return {TraceablePeerConnection}
      */
-    createPeerConnection(signaling: any, pcConfig: object, isP2P: boolean, options: {
+    createPeerConnection(signaling: SignalingLayer, pcConfig: object, isP2P: boolean, options: {
         enableInsertableStreams: boolean;
         disableSimulcast: boolean;
         disableRtx: boolean;
@@ -394,7 +394,7 @@ export default class RTC extends Listenable {
      *      by their media type if this argument is specified.
      * @return {Array<JitsiRemoteTrack>}
      */
-    getRemoteTracks(mediaType?: MediaType): Array<any>;
+    getRemoteTracks(mediaType?: MediaType): Array<JitsiRemoteTrack>;
     /**
      * Set mute for all local audio streams attached to the conference.
      * @param value The mute value.

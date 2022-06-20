@@ -1,5 +1,5 @@
 /// <reference types="node" />
-declare var _default: JitsiMediaDevices;
+declare const _default: JitsiMediaDevices;
 export default _default;
 /**
  * Media devices utilities for Jitsi.

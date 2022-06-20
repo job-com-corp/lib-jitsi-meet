@@ -11,9 +11,9 @@ export default class ReceiveVideoController {
      * the receive video quality constraints.
      * @param {RTC} rtc the rtc instance which is responsible for initializing the bridge channel.
      */
-    constructor(conference: any, rtc: any);
-    _conference: any;
-    _rtc: any;
+    constructor(conference: JitsiConference, rtc: RTC);
+    _conference: JitsiConference;
+    _rtc: RTC;
     _lastN: any;
     _maxFrameHeight: number;
     /**

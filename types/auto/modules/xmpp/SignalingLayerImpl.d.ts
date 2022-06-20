@@ -21,7 +21,7 @@ export default class SignalingLayerImpl extends SignalingLayer {
      *
      * @type {ChatRoom|null}
      */
-    chatRoom: any | null;
+    chatRoom: ChatRoom | null;
     /**
      * @type {Map<SourceName, SourceInfo>}
      * @private
@@ -55,15 +55,15 @@ export default class SignalingLayerImpl extends SignalingLayer {
      * @param {EndpointId} endpointId
      * @returns {boolean}
      */
-    _doesEndpointSendNewSourceInfo(endpointId: any): boolean;
+    _doesEndpointSendNewSourceInfo(endpointId: EndpointId): boolean;
     /**
      * Sets the <tt>ChatRoom</tt> instance used and binds presence listeners.
      * @param {ChatRoom} room
      */
-    setChatRoom(room: any): void;
-    _audioMuteHandler: (node: any, from: any) => void;
-    _videoMuteHandler: (node: any, from: any) => void;
-    _videoTypeHandler: (node: any, from: any) => void;
+    setChatRoom(room: ChatRoom): void;
+    _audioMuteHandler: ((node: any, from: any) => void) | ((node: any, from: any) => void);
+    _videoMuteHandler: ((node: any, from: any) => void) | ((node: any, from: any) => void);
+    _videoTypeHandler: ((node: any, from: any) => void) | ((node: any, from: any) => void);
     /**
      * Binds event listeners to the chat room instance.
      * @param {ChatRoom} room
@@ -82,6 +82,18 @@ export default class SignalingLayerImpl extends SignalingLayer {
      */
     private _findEndpointSourceInfoForMediaType;
     /**
+     * @inheritDoc
+     */
+    getPeerMediaInfo(owner: any, mediaType: any, sourceName: any): any;
+    /**
+     * @inheritDoc
+     */
+    getPeerSourceInfo(owner: any, sourceName: any): any;
+    /**
+     * @inheritDoc
+     */
+    getSSRCOwner(ssrc: any): string;
+    /**
      * Set an SSRC owner.
      * @param {number} ssrc an SSRC to be owned
      * @param {string} endpointId owner's ID (MUC nickname)
@@ -95,21 +107,25 @@ export default class SignalingLayerImpl extends SignalingLayer {
      * @param {boolean} muted - the new muted status.
      * @returns {boolean}
      */
-    setTrackMuteStatus(sourceName: any, muted: boolean): boolean;
+    setTrackMuteStatus(sourceName: SourceName, muted: boolean): boolean;
     /**
      * Sets track's video type.
      * @param {SourceName} sourceName - the track's source name.
      * @param {VideoType} videoType - the new video type.
      * @returns {boolean}
      */
-    setTrackVideoType(sourceName: any, videoType: VideoType): boolean;
+    setTrackVideoType(sourceName: SourceName, videoType: VideoType): boolean;
+    /**
+     * @inheritDoc
+     */
+    getTrackSourceName(ssrc: any): string;
     /**
      * Saves the source name for a track identified by it's ssrc.
      * @param {number} ssrc the ssrc of the target track.
      * @param {SourceName} sourceName the track's source name to save.
      * @throws TypeError if <tt>ssrc</tt> is not a number
      */
-    setTrackSourceName(ssrc: number, sourceName: any): void;
+    setTrackSourceName(ssrc: number, sourceName: SourceName): void;
 }
 import SignalingLayer from "../../service/RTC/SignalingLayer";
 import { VideoType } from "../../service/RTC/VideoType";

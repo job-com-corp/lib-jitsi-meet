@@ -24,12 +24,16 @@ declare class RTCUtils extends Listenable {
         generateCertificate(keygenAlgorithm: AlgorithmIdentifier): Promise<RTCCertificate>;
     };
     attachMediaStream: Function;
-    getStreamID: ({ id }: {
+    getStreamID: (({ id }: {
         id: any;
-    }) => any;
-    getTrackID: ({ id }: {
+    }) => any) | (({ id }: {
         id: any;
-    }) => any;
+    }) => any);
+    getTrackID: (({ id }: {
+        id: any;
+    }) => any) | (({ id }: {
+        id: any;
+    }) => any);
     pcConstraints: {};
     /**
      *

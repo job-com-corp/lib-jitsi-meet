@@ -13,8 +13,8 @@ export default class LocalSdpMunger {
      * @param {TraceablePeerConnection} tpc
      * @param {string} localEndpointId - The endpoint id of the local user.
      */
-    constructor(tpc: any, localEndpointId: string);
-    tpc: any;
+    constructor(tpc: TraceablePeerConnection, localEndpointId: string);
+    tpc: TraceablePeerConnection;
     localEndpointId: string;
     audioSourcesToMsidMap: Map<any, any>;
     videoSourcesToMsidMap: Map<any, any>;

@@ -215,5 +215,6 @@ export default class JitsiParticipant {
      */
     setConnectionJid(newJid: string): void;
     _connectionJid: string;
+    getIdentity(): any;
 }
 import { MediaType } from "./service/RTC/MediaType";

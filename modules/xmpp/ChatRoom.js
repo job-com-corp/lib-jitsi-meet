@@ -501,10 +501,10 @@ export default class ChatRoom extends Listenable {
         const extractIdentityInformation = node => {
             const identity = {};
             const userInfo = node.children.find(c => c.tagName === 'user');
-
+            console.log("User Info libJitsiMeet.js onPresence", userInfo);
             if (userInfo) {
                 identity.user = {};
-                const tags = [ 'id', 'name', 'avatar' ];
+                const tags = [ 'id', 'name', 'avatar', 'email' ];
 
                 if (this.options.hiddenFromRecorderFeatureEnabled) {
                     tags.push('hidden-from-recorder');

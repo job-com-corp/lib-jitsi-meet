@@ -300,4 +300,11 @@ export default class JitsiParticipant {
     supportsDTMF() {
         return this._supportsDTMF;
     }
+
+    /**
+     * TEAM.AI
+     */
+    getIdentity() {
+        return this._identity;
+    }
 }

@@ -357,8 +357,4 @@ export default class JitsiParticipant {
     supportsDTMF() {
         return this._supportsDTMF;
     }
-
-    getIdentity() {
-        return this._identity;
-    }
 }

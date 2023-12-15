@@ -1,6 +1,6 @@
-name: Simple CI
+name: Simple CI with Artifact upload
 
-on: [pull_request]
+on: push
 
 jobs:
   run-ci:
@@ -21,3 +21,9 @@ jobs:
       run: exit $( git status --porcelain --untracked-files=no | head -255 | wc -l )
     - run: npm run lint
     - run: npm run test
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: lib-jitsi-meet
+        path: lib-jitsi-meet-*.tgz
+        retention-days: 2

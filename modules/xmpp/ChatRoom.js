@@ -103,7 +103,7 @@ function extractIdentityInformation(node, hiddenFromRecorderFeatureEnabled) {
 
     if (userInfo) {
         identity.user = {};
-        const tags = [ 'id', 'name', 'avatar' ];
+        const tags = [ 'id', 'name', 'avatar', 'email' ];
 
         if (hiddenFromRecorderFeatureEnabled) {
             tags.push('hidden-from-recorder');

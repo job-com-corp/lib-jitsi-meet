@@ -6,25 +6,18 @@ import CodecMimeType from '../../service/RTC/CodecMimeType';
 import { MediaDirection } from '../../service/RTC/MediaDirection';
 import { MediaType } from '../../service/RTC/MediaType';
 import { getSourceIndexFromSourceName } from '../../service/RTC/SignalingLayer';
-import { STANDARD_CODEC_SETTINGS } from '../../service/RTC/StandardVideoSettings';
+import {
+    SIM_LAYERS,
+    STANDARD_CODEC_SETTINGS,
+    VIDEO_QUALITY_LEVELS,
+    VIDEO_QUALITY_SETTINGS
+} from '../../service/RTC/StandardVideoSettings';
 import VideoEncoderScalabilityMode from '../../service/RTC/VideoEncoderScalabilityMode';
 import { VideoType } from '../../service/RTC/VideoType';
 import browser from '../browser';
-import FeatureFlags from '../flags/FeatureFlags';
 
 const logger = getLogger(__filename);
-const DESKTOP_SHARE_RATE = 500000;
-const SIM_LAYER_1_RID = '1';
-const SIM_LAYER_2_RID = '2';
-const SIM_LAYER_3_RID = '3';
 const VIDEO_CODECS = [ CodecMimeType.AV1, CodecMimeType.H264, CodecMimeType.VP8, CodecMimeType.VP9 ];
-
-// TODO - need to revisit these settings when 4K is the captured resolution. We can change the LD scale factor to 6
-// instead of 4 so that the lowest resolution will be 360p instead of 540p.
-export const HD_SCALE_FACTOR = 1.0;
-export const LD_SCALE_FACTOR = 4.0;
-export const SD_SCALE_FACTOR = 2.0;
-export const SIM_LAYER_RIDS = [ SIM_LAYER_1_RID, SIM_LAYER_2_RID, SIM_LAYER_3_RID ];
 
 /**
  * Handles track related operations on TraceablePeerConnection when browser is
@@ -39,6 +32,9 @@ export class TPCUtils {
     constructor(peerconnection) {
         this.pc = peerconnection;
         this.codecSettings = clonedeep(STANDARD_CODEC_SETTINGS);
+        this.l0ScaleFactor = SIM_LAYERS[0].scaleFactor;
+        this.l1ScaleFactor = SIM_LAYERS[1].scaleFactor;
+        this.l2ScaleFactor = SIM_LAYERS[2].scaleFactor;
         const videoQualitySettings = this.pc.options?.videoQuality;
 
         if (videoQualitySettings) {
@@ -51,7 +47,9 @@ export class TPCUtils {
                         && videoQualitySettings.maxbitratesvideo[codec.toUpperCase()]);
 
                 if (bitrateSettings) {
-                    [ 'low', 'standard', 'high', 'ssHigh' ].forEach(value => {
+                    const settings = Object.values(VIDEO_QUALITY_SETTINGS);
+
+                    [ ...settings, 'ssHigh' ].forEach(value => {
                         if (bitrateSettings[value]) {
                             this.codecSettings[codec].maxBitratesVideo[value] = bitrateSettings[value];
                         }
@@ -67,9 +65,9 @@ export class TPCUtils {
                         || codecConfig.scalabilityModeEnabled);
 
                 if (scalabilityModeEnabled) {
-                    typeof codecConfig.useSimulcast !== undefined
+                    typeof codecConfig.useSimulcast !== 'undefined'
                         && (this.codecSettings[codec].useSimulcast = codecConfig.useSimulcast);
-                    typeof codecConfig.useKSVC !== undefined
+                    typeof codecConfig.useKSVC !== 'undefined'
                         && (this.codecSettings[codec].useKSVC = codecConfig.useKSVC);
                 } else {
                     this.codecSettings[codec].scalabilityModeEnabled = false;
@@ -89,40 +87,56 @@ export class TPCUtils {
      */
     _calculateActiveEncodingParams(localVideoTrack, codec, newHeight) {
         const codecBitrates = this.codecSettings[codec].maxBitratesVideo;
-        const height = localVideoTrack.getHeight();
-        const desktopShareBitrate = this.pc.options?.videoQuality?.desktopbitrate || DESKTOP_SHARE_RATE;
+        const trackCaptureHeight = localVideoTrack.resolution;
+        const effectiveNewHeight = newHeight > trackCaptureHeight ? trackCaptureHeight : newHeight;
+        const desktopShareBitrate = this.pc.options?.videoQuality?.desktopbitrate || codecBitrates.ssHigh;
         const isScreenshare = localVideoTrack.getVideoType() === VideoType.DESKTOP;
         let scalabilityMode = this.codecSettings[codec].useKSVC
             ? VideoEncoderScalabilityMode.L3T3_KEY : VideoEncoderScalabilityMode.L3T3;
-        let maxBitrate = codecBitrates.high;
+        const { height, level } = VIDEO_QUALITY_LEVELS.find(lvl => lvl.height <= effectiveNewHeight);
+        let maxBitrate;
+        let scaleResolutionDownBy = this.l2ScaleFactor;
 
         if (this._isScreenshareBitrateCapped(localVideoTrack)) {
             scalabilityMode = VideoEncoderScalabilityMode.L1T3;
             maxBitrate = desktopShareBitrate;
-        } else if (localVideoTrack.getVideoType() === VideoType.DESKTOP) {
+        } else if (isScreenshare) {
             maxBitrate = codecBitrates.ssHigh;
+        } else {
+            maxBitrate = codecBitrates[level];
+            effectiveNewHeight && (scaleResolutionDownBy = trackCaptureHeight / effectiveNewHeight);
+
+            if (height !== effectiveNewHeight) {
+                logger.debug(`Quality level with height=${height} was picked when requested height=${newHeight} for`
+                    + `track with capture height=${trackCaptureHeight}`);
+            }
         }
 
         const config = {
-            active: newHeight > 0,
+            active: effectiveNewHeight > 0,
             maxBitrate,
             scalabilityMode,
-            scaleResolutionDownBy: HD_SCALE_FACTOR
+            scaleResolutionDownBy
         };
 
-        if (newHeight >= height || newHeight === 0 || isScreenshare) {
+        if (!config.active || isScreenshare) {
             return config;
         }
 
-        if (newHeight >= height / SD_SCALE_FACTOR) {
-            config.maxBitrate = codecBitrates.standard;
+        // Configure the sender to send all 3 spatial layers for resolutions 720p and higher.
+        switch (level) {
+        case VIDEO_QUALITY_SETTINGS.ULTRA:
+        case VIDEO_QUALITY_SETTINGS.FULL:
+        case VIDEO_QUALITY_SETTINGS.HIGH:
+            config.scalabilityMode = this.codecSettings[codec].useKSVC
+                ? VideoEncoderScalabilityMode.L3T3_KEY : VideoEncoderScalabilityMode.L3T3;
+            break;
+        case VIDEO_QUALITY_SETTINGS.STANDARD:
             config.scalabilityMode = this.codecSettings[codec].useKSVC
                 ? VideoEncoderScalabilityMode.L2T3_KEY : VideoEncoderScalabilityMode.L2T3;
-            config.scaleResolutionDownBy = SD_SCALE_FACTOR;
-        } else {
-            config.maxBitrate = codecBitrates.low;
+            break;
+        default:
             config.scalabilityMode = VideoEncoderScalabilityMode.L1T3;
-            config.scaleResolutionDownBy = LD_SCALE_FACTOR;
         }
 
         return config;
@@ -134,19 +148,21 @@ export class TPCUtils {
      * @param {JitsiLocalTrack} localTrack
      */
     _getStreamEncodings(localTrack) {
-        const codec = this.pc.getConfiguredVideoCodec();
-        const encodings = this._getVideoStreamEncodings(localTrack.getVideoType(), codec);
+        if (localTrack.isAudioTrack()) {
+            return [ { active: this.pc.audioTransferActive } ];
+        }
 
-        if (this.pc.isSpatialScalabilityOn() && localTrack.isVideoTrack()) {
+        const codec = this.pc.getConfiguredVideoCodec();
+        const encodings = this._getVideoStreamEncodings(localTrack, codec);
+
+        if (this.pc.isSpatialScalabilityOn()) {
             return encodings;
         }
 
-        return localTrack.isVideoTrack()
-            ? [ {
-                active: this.pc.videoTransferActive,
-                maxBitrate: this.codecSettings[codec].maxBitratesVideo.high
-            } ]
-            : [ { active: this.pc.audioTransferActive } ];
+        return [ {
+            active: this.pc.videoTransferActive,
+            maxBitrate: this.codecSettings[codec].maxBitratesVideo.high
+        } ];
     }
 
     /**
@@ -162,13 +178,26 @@ export class TPCUtils {
      * scaleResolutionDownBy - the factor by which the encoding is scaled down from the
      *  original resolution of the captured video.
      *
-     * @param {VideoType} videoType
+     * @param {JitsiLocalTrack} localTrack
      * @param {String} codec
      */
-    _getVideoStreamEncodings(videoType, codec) {
+    _getVideoStreamEncodings(localTrack, codec) {
+        const captureResolution = localTrack.resolution;
         const codecBitrates = this.codecSettings[codec].maxBitratesVideo;
+        const videoType = localTrack.getVideoType();
+        const { level } = VIDEO_QUALITY_LEVELS.find(lvl => lvl.height <= captureResolution);
+        const maxBitrate = codecBitrates[level];
+
+        if (level === VIDEO_QUALITY_SETTINGS.ULTRA) {
+            this.l1ScaleFactor = 6.0; // 360p
+            this.l0ScaleFactor = 12.0; // 180p
+        } else if (level === VIDEO_QUALITY_SETTINGS.FULL) {
+            this.l1ScaleFactor = 3.0; // 360p
+            this.l0ScaleFactor = 6.0; // 180p
+        }
+
         const maxVideoBitrate = videoType === VideoType.DESKTOP
-            ? codecBitrates.ssHigh : codecBitrates.high;
+            ? codecBitrates.ssHigh : maxBitrate;
 
         // The SSRCs on older versions of Firefox are reversed in SDP, i.e., they have resolution order of 1:2:4 as
         // opposed to Chromium and other browsers. This has been reverted in Firefox 117 as part of the below commit.
@@ -182,20 +211,20 @@ export class TPCUtils {
             {
                 active: this.pc.videoTransferActive,
                 maxBitrate: reversedEncodings ? maxVideoBitrate : codecBitrates.low,
-                rid: SIM_LAYER_1_RID,
-                scaleResolutionDownBy: reversedEncodings ? HD_SCALE_FACTOR : LD_SCALE_FACTOR
+                rid: SIM_LAYERS[0].rid,
+                scaleResolutionDownBy: reversedEncodings ? this.l2ScaleFactor : this.l0ScaleFactor
             },
             {
                 active: this.pc.videoTransferActive,
                 maxBitrate: codecBitrates.standard,
-                rid: SIM_LAYER_2_RID,
-                scaleResolutionDownBy: SD_SCALE_FACTOR
+                rid: SIM_LAYERS[1].rid,
+                scaleResolutionDownBy: this.l1ScaleFactor
             },
             {
                 active: this.pc.videoTransferActive,
                 maxBitrate: reversedEncodings ? codecBitrates.low : maxVideoBitrate,
-                rid: SIM_LAYER_3_RID,
-                scaleResolutionDownBy: reversedEncodings ? LD_SCALE_FACTOR : HD_SCALE_FACTOR
+                rid: SIM_LAYERS[2].rid,
+                scaleResolutionDownBy: reversedEncodings ? this.l0ScaleFactor : this.l2ScaleFactor
             }
         ];
 
@@ -215,8 +244,8 @@ export class TPCUtils {
                 {
                     active: this.pc.videoTransferActive,
                     maxBitrate: maxVideoBitrate,
-                    rid: SIM_LAYER_1_RID,
-                    scaleResolutionDownBy: HD_SCALE_FACTOR,
+                    rid: SIM_LAYERS[0].rid,
+                    scaleResolutionDownBy: this.l2ScaleFactor,
                     scalabilityMode: this.codecSettings[codec].useKSVC
                         ? VideoEncoderScalabilityMode.L3T3_KEY : VideoEncoderScalabilityMode.L3T3
                 },
@@ -329,8 +358,8 @@ export class TPCUtils {
      * @returns {Array<boolean>}
      */
     calculateEncodingsActiveState(localVideoTrack, codec, newHeight) {
-        const height = localVideoTrack.getHeight();
-        const videoStreamEncodings = this._getVideoStreamEncodings(localVideoTrack.getVideoType(), codec);
+        const height = localVideoTrack.resolution;
+        const videoStreamEncodings = this._getVideoStreamEncodings(localVideoTrack, codec);
         const encodingsState = videoStreamEncodings
         .map(encoding => height / encoding.scaleResolutionDownBy)
         .map((frameHeight, idx) => {
@@ -354,11 +383,11 @@ export class TPCUtils {
                         // but the requested resolution is 180. Since getParameters doesn't give us information about
                         // the resolutions of the simulcast encodings, we have to rely on our initial config for the
                         // simulcast streams.
-                        || videoStreamEncodings[idx]?.scaleResolutionDownBy === LD_SCALE_FACTOR;
+                        || videoStreamEncodings[idx]?.scaleResolutionDownBy === this.l0ScaleFactor;
                 } else {
                     // For screenshare, keep the HD layer enabled always and the lower layers only for high fps
                     // screensharing.
-                    active = videoStreamEncodings[idx].scaleResolutionDownBy === HD_SCALE_FACTOR
+                    active = videoStreamEncodings[idx].scaleResolutionDownBy === this.l2ScaleFactor
                         || !this._isScreenshareBitrateCapped(localVideoTrack);
                 }
             }
@@ -379,9 +408,9 @@ export class TPCUtils {
      * @returns {Array<number>}
      */
     calculateEncodingsBitrates(localVideoTrack, codec, newHeight) {
-        const videoType = localVideoTrack.getVideoType();
-        const desktopShareBitrate = this.pc.options?.videoQuality?.desktopbitrate || DESKTOP_SHARE_RATE;
-        const encodingsBitrates = this._getVideoStreamEncodings(localVideoTrack.getVideoType(), codec)
+        const codecBitrates = this.codecSettings[codec].maxBitratesVideo;
+        const desktopShareBitrate = this.pc.options?.videoQuality?.desktopbitrate || codecBitrates.ssHigh;
+        const encodingsBitrates = this._getVideoStreamEncodings(localVideoTrack, codec)
         .map((encoding, idx) => {
             let bitrate = encoding.maxBitrate;
 
@@ -395,11 +424,6 @@ export class TPCUtils {
             // Multiple video streams.
             if (this._isScreenshareBitrateCapped(localVideoTrack)) {
                 bitrate = desktopShareBitrate;
-            } else if (videoType === VideoType.DESKTOP && browser.isChromiumBased() && !this.pc.usesUnifiedPlan()) {
-                // For high fps screenshare, 'maxBitrate' setting must be cleared on Chrome in plan-b, because
-                // if simulcast is enabled for screen and maxBitrates are set then Chrome will not send the
-                // desktop stream.
-                bitrate = undefined;
             }
 
             return bitrate;
@@ -454,7 +478,7 @@ export class TPCUtils {
      */
     calculateEncodingsScaleFactor(localVideoTrack, codec, maxHeight) {
         if (this.pc.isSpatialScalabilityOn() && this.isRunningInSimulcastMode(codec)) {
-            return this._getVideoStreamEncodings(localVideoTrack.getVideoType(), codec)
+            return this._getVideoStreamEncodings(localVideoTrack, codec)
                 .map(encoding => encoding.scaleResolutionDownBy);
         }
 
@@ -517,7 +541,7 @@ export class TPCUtils {
      * @returns {number|null} The max encoded resolution for the given video track.
      */
     getConfiguredEncodeResolution(localVideoTrack, codec) {
-        const height = localVideoTrack.getHeight();
+        const height = localVideoTrack.resolution;
         const videoSender = this.pc.findSenderForTrack(localVideoTrack.getTrack());
         let maxHeight = 0;
 
@@ -555,9 +579,7 @@ export class TPCUtils {
 
         for (const encoding in parameters.encodings) {
             if (parameters.encodings[encoding].active) {
-                const encodingConfig = this._getVideoStreamEncodings(
-                    localVideoTrack.getVideoType(),
-                    this.pc.getConfiguredVideoCodec());
+                const encodingConfig = this._getVideoStreamEncodings(localVideoTrack, codec);
                 const scaleResolutionDownBy
                     = this.pc.isSpatialScalabilityOn()
                         ? encodingConfig[encoding].scaleResolutionDownBy
@@ -587,25 +609,21 @@ export class TPCUtils {
         }
         const rids = [
             {
-                id: SIM_LAYER_1_RID,
+                id: SIM_LAYERS[0].rid,
                 direction: 'recv'
             },
             {
-                id: SIM_LAYER_2_RID,
+                id: SIM_LAYERS[1].rid,
                 direction: 'recv'
             },
             {
-                id: SIM_LAYER_3_RID,
+                id: SIM_LAYERS[2].rid,
                 direction: 'recv'
             }
         ];
 
-        // Firefox 72 has stopped parsing the legacy rid= parameters in simulcast attributes.
-        // eslint-disable-next-line max-len
-        // https://www.fxsitecompat.dev/en-CA/docs/2019/pt-and-rid-in-webrtc-simulcast-attributes-are-no-longer-supported/
-        const simulcastLine = browser.isFirefox() && browser.isVersionGreaterThan(71)
-            ? `recv ${SIM_LAYER_RIDS.join(';')}`
-            : `recv rid=${SIM_LAYER_RIDS.join(';')}`;
+        const ridLine = rids.map(val => val.id).join(';');
+        const simulcastLine = `recv ${ridLine}`;
         const sdp = transform.parse(desc.sdp);
         const mLines = sdp.media.filter(m => m.type === MediaType.VIDEO);
         const senderMids = Array.from(this.pc._localTrackTransceiverMids.values());
@@ -667,8 +685,7 @@ export class TPCUtils {
         const mediaType = newTrack?.getType() ?? oldTrack?.getType();
         const localTracks = this.pc.getLocalTracks(mediaType);
         const track = newTrack?.getTrack() ?? null;
-        const isNewLocalSource = FeatureFlags.isMultiStreamSendSupportEnabled()
-            && localTracks?.length
+        const isNewLocalSource = localTracks?.length
             && !oldTrack
             && newTrack
             && !localTracks.find(t => t === newTrack);
@@ -789,34 +806,5 @@ export class TPCUtils {
 
                 return Promise.resolve();
             });
-    }
-
-    /**
-     * Ensures that the resolution of the stream encodings are consistent with the values
-     * that were configured on the RTCRtpSender when the source was added to the peerconnection.
-     * This should prevent us from overriding the default values if the browser returns
-     * erroneous values when RTCRtpSender.getParameters is used for getting the encodings info.
-     * @param {JitsiLocalTrack} localVideoTrack The local video track.
-     * @param {Object} parameters - the RTCRtpEncodingParameters obtained from the browser.
-     * @returns {void}
-     */
-    updateEncodingsResolution(localVideoTrack, parameters) {
-        if (!(browser.isWebKitBased() && parameters.encodings && Array.isArray(parameters.encodings))) {
-            return;
-        }
-        const allEqualEncodings
-            = encodings => encodings.every(encoding => typeof encoding.scaleResolutionDownBy !== 'undefined'
-                && encoding.scaleResolutionDownBy === encodings[0].scaleResolutionDownBy);
-
-        // Implement the workaround only when all the encodings report the same resolution.
-        if (allEqualEncodings(parameters.encodings)) {
-            const videoStreamEncodings = this._getVideoStreamEncodings(
-                localVideoTrack.getVideoType(),
-                this.pc.getConfiguredVideoCodec());
-
-            parameters.encodings.forEach((encoding, idx) => {
-                encoding.scaleResolutionDownBy = videoStreamEncodings[idx].scaleResolutionDownBy;
-            });
-        }
     }
 }

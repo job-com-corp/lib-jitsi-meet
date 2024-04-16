@@ -1762,7 +1762,12 @@ JitsiConference.prototype.onMemberJoined = function(
         return;
     }
     console.log(nick, isHidden, identity, role, fullJid, status, 'babababababbabababaababababa');
-    const participant = new JitsiParticipant(jid, this, nick, isHidden, statsID, status, identity);
+    let _isHidden = isHidden;
+
+    if (nick === 'Transcriber') {
+        _isHidden = true;
+    }
+    const participant = new JitsiParticipant(jid, this, nick, _isHidden, statsID, status, identity);
 
     participant.setConnectionJid(fullJid);
     participant.setRole(role);

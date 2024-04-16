@@ -1761,6 +1761,7 @@ JitsiConference.prototype.onMemberJoined = function(
     if (id === 'focus' || this.myUserId() === id) {
         return;
     }
+    console.log(nick, isHidden, identity, role, fullJid, status, 'babababababbabababaababababa');
     const participant = new JitsiParticipant(jid, this, nick, isHidden, statsID, status, identity);
 
     participant.setConnectionJid(fullJid);
